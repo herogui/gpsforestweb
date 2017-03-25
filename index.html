@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head >
+    <title></title>
+
+    <link rel="stylesheet" href="../../js/esri/3.19compact/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" href="../../js/esri/3.19compact/esri/css/esri.css">
+    <style>
+        html, body, #map {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"/>
+    <input type="button" style="float:left;position:relative" onclick="drawPolyLine()" value="绘制轨迹" />
+</body>
+</html>
+
+<script type="text/javascript" src="../../js/esri/3.19compact/init.js"></script>
+<script src="js/gis.js"></script>
+<script>
+
+    var drawTool;//画图工具
+    window.onload = function () {
+
+        //初始化地图容器
+        require([
+            "esri/map", "esri/geometry/Extent", "esri/layers/WebTiledLayer", "esri/toolbars/draw", "dojo/parser",
+           "dojo/domReady!"
+        ], function (
+            Map, Extent, WebTiledLayer,Draw, parser, domReady
+          ) {
+            parser.parse();
+
+            //初始化地图范围
+            var fullExtent = new Extent({ xmin: 12618458.717709353, ymin: 2649413.0984451086, xmax: 12642918.566760575, ymax: 2654878.3459674916, spatialReference: { wkid: 102100 } });
+            initMap();
+
+            //初始化地图
+            function initMap() {
+                map = new Map("map", {
+                    extent: fullExtent,
+                    logo: false,
+                    slider:false//是否显示放大缩小控件
+                });
+
+                //google地图
+                var gaodeMap = new WebTiledLayer("http://mt${subDomain}.google.cn/maps/vt?lyrs=s%40717&hl=zh-CN&gl=CN&&x=${col}&y=${row}&z=${level}", {
+
+                    "id": "gaodeMap",
+                    "subDomains": ["0", "1", "2"]
+                });
+
+                map.addLayer(gaodeMap);
+            }
+
+            //画图
+            drawTool = new Draw(map);
+            drawTool.on("draw-end", drawEndHande);
+
+            //点击删除轨迹
+            dojo.connect(map.graphics, "onClick", function (evt) {
+                map.graphics.remove(evt.graphic)
+            });
+
+        //end
+        });
+    }
+
+    //激活画线工具
+    function drawPolyLine() {        
+        require([
+            "esri/toolbars/draw",
+        ], function (draw) {
+            drawTool.activate(draw.POLYLINE);
+        });
+    }
+
+    function drawEndHande(evt) {
+        require([
+            "esri/symbols/SimpleFillSymbol", "esri/symbols/SimpleLineSymbol", "esri/graphic"
+        ], function (SimpleFillSymbol,SimpleLineSymbol, Graphic) {
+            drawTool.deactivate();
+            
+            //绘图
+            var highlightSymbol = new SimpleLineSymbol(
+                                                SimpleLineSymbol.STYLE_SOLID,
+                                                new dojo.Color([102, 102, 255]),
+                                                5
+                                            );
+            var graphic = new Graphic(evt.geometry, highlightSymbol);          
+            map.graphics.add(graphic);
+            
+            //点存为Json
+            polyline2Json(evt.geometry)
+        });
+    }
+
+    //获取轨迹的Json
+    function polyline2Json(polyline)
+    {
+        var arr = polyline.paths[0];
+        var json = ""
+        var pntList = [];
+        for (n in arr)
+        {
+            var lonlat = mercator2lonlat(arr[n][0], arr[n][1])
+            var p = new pnt(lonlat.X, lonlat.Y)
+            pntList.push(p)
+            //json += lonlat.X + "," + lonlat.Y + ";"
+        }
+        var json = obj2json(pntList)
+        alert(json)
+    }
+
+
+</script>
