@@ -1,11 +1,19 @@
 ﻿
-//经纬度转墨卡托
-function lonlat2mercator(lon, lat) {
-    var X = lon * 20037508.34 / 180;
-    var Y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
-    Y = Y * 20037508.34 / 180;
-    var mercator = new esri.geometry.Point(X, Y, map.spatialReference);
-    return mercator;
+function DistanceOfTwoPoints(lng1, lat1, lng2, lat2) {
+    var radLat1 = Rad(lat1);
+    var radLat2 = Rad(lat2);
+    var a = radLat1 - radLat2;
+    var b = Rad(lng1) - Rad(lng2);
+    var s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2) +
+    Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(b / 2), 2)));
+    s = s * 6378137;
+    s = Math.round(s * 10000) / 10000;
+    return s;
+}
+
+function  Rad( d)
+{
+   return d * Math.PI / 180.0;
 }
 
 //墨卡托转经纬度
